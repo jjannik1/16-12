@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <script src="JS.js"></script>
+    <script>alert(navigator.userAgentData.brands[0].brand);
+        alert(navigator.userAgentData.brands[0].version);
+
+    </script>
+    <title>Document</title>
+</head>
+<body>
+
+    <div>
+        <h3>El software diseñado para ser rapido</h3>
+
+        <button type="button" onclick="descarg()"><span id="princ"></span></button>
+
+    </div>
+
+    <script>
+            document.getElementById("princ").innerHTML = "Descargar para " +navigator.userAgentData.brands[0].brand;
+    </script>
+    
+</body>
+</html>
