@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscaminas</title>
+    <style>
+        body { text-align: center; font-family: sans-serif; margin-top: 20px; }
+        #tablero { display: inline-block; margin-top: 20px; }
+        .fila { display: flex; }
+        .celda {
+            width: 40px;
+            height: 40px;
+            margin: 2px;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #333;
+            user-select: none;
+        }
+        .celda.descubierta {
+            background-color: #ddd;
+            cursor: default;
+        }
+        button { padding: 10px 20px; margin-top: 20px; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <h1>Buscaminas</h1>
+    <p id="nivelParrafo"></p>
+    <div id="tablero"></div>
+    <button onclick="window.close()">Cerrar ventana</button>
+
+    <script>
+        let tableroInterno = [];
+        let tableroVisible = [];
+        let cajasVaciasTotales = 0;
+        let cajasVaciasDescubiertas = 0;
+        let juegoTerminado = false;
+
+        function inicializarBuscaminas() {
+            const nivel = window.nivel || 1;
+            document.getElementById('nivelParrafo').textContent = `Nivel ${nivel}`;
+
+            const filas = nivel + 2; // Nivel 1 -> 3x3, Nivel 2 -> 4x4 ...
+            const columnas = filas;
+            const bombas = Math.floor(filas * columnas * 0.2); // 20% de minas
+
+            cajasVaciasTotales = filas * columnas - bombas;
+            cajasVaciasDescubiertas = 0;
+            juegoTerminado = false;
+
+            // Crear tablero interno
+            tableroInterno = Array.from({ length: filas }, () => Array(columnas).fill('📦'));
+            let bombasColocadas = 0;
+            while (bombasColocadas < bombas) {
+                const i = Math.floor(Math.random() * filas);
+                const j = Math.floor(Math.random() * columnas);
+                if (tableroInterno[i][j] !== '💣') {
+                    tableroInterno[i][j] = '💣';
+                    bombasColocadas++;
+                }
+            }
+
+            // Crear tablero visible
+            tableroVisible = Array.from({ length: filas }, () => Array(columnas).fill('📦'));
+
+            // Dibujar tablero
+            dibujarTablero(filas, columnas);
+        }
+
+        function dibujarTablero(filas, columnas) {
+            const tableroDiv = document.getElementById('tablero');
+            tableroDiv.innerHTML = '';
+            for (let i = 0; i < filas; i++) {
+                const filaDiv = document.createElement('div');
+                filaDiv.classList.add('fila');
+                for (let j = 0; j < columnas; j++) {
+                    const celdaDiv = document.createElement('div');
+                    celdaDiv.classList.add('celda');
+                    celdaDiv.textContent = '📦';
+                    celdaDiv.dataset.fila = i;
+                    celdaDiv.dataset.col = j;
+
+                    celdaDiv.addEventListener('click', () => {
+                        if (!juegoTerminado && !celdaDiv.classList.contains('descubierta')) {
+                            descubrirCelda(i, j, celdaDiv);
+                        }
+                    });
+
+                    filaDiv.appendChild(celdaDiv);
+                }
+                tableroDiv.appendChild(filaDiv);
+            }
+        }
+
+        function descubrirCelda(fila, col, celdaDiv) {
+            if (tableroInterno[fila][col] === '💣') {
+                celdaDiv.textContent = '💣';
+                celdaDiv.style.backgroundColor = 'red';
+                juegoTerminado = true;
+                alert('GAME OVER!!');
+                revelarBombas();
+            } else {
+                const minasAlrededor = contarMinasAlrededor(fila, col);
+                celdaDiv.textContent = minasAlrededor > 0 ? minasAlrededor : '💨';
+                celdaDiv.classList.add('descubierta');
+                cajasVaciasDescubiertas++;
+
+                if (cajasVaciasDescubiertas === cajasVaciasTotales) {
+                    juegoTerminado = true;
+                    alert('¡YOU ARE A WINNER!!!');
+                }
+            }
+        }
+
+        function contarMinasAlrededor(fila, col) {
+            let contador = 0;
+            for (let i = fila - 1; i <= fila + 1; i++) {
+                for (let j = col - 1; j <= col + 1; j++) {
+                    if (i >= 0 && i < tableroInterno.length &&
+                        j >= 0 && j < tableroInterno[0].length &&
+                        tableroInterno[i][j] === '💣') {
+                        contador++;
+                    }
+                }
+            }
+            return contador;
+        }
+
+        function revelarBombas() {
+            for (let i = 0; i < tableroInterno.length; i++) {
+                for (let j = 0; j < tableroInterno[i].length; j++) {
+                    if (tableroInterno[i][j] === '💣') {
+                        const celdaDiv = document.querySelector(`.celda[data-fila='${i}'][data-col='${j}']`);
+                        if (celdaDiv) {
+                            celdaDiv.textContent = '💣';
+                            celdaDiv.style.backgroundColor = 'red';
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</bo

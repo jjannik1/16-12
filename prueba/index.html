@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Mini Gothic RPG</title>
+<style>
+  body { margin: 0; background: #000; }
+  canvas { display: block; margin: 0 auto; background: #4a3f2f; }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas" width="800" height="600"></canvas>
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// Player
+const player = {
+    x: 400,
+    y: 300,
+    width: 32,
+    height: 32,
+    color: 'blue',
+    speed: 3
+};
+
+// NPCs
+const npcs = [
+    { x: 200, y: 200, width: 32, height: 32, color: 'red', message: "¡Hola viajero!" },
+    { x: 600, y: 400, width: 32, height: 32, color: 'green', message: "Cuida de los bandidos." }
+];
+
+// Keyboard input
+const keys = {};
+window.addEventListener('keydown', (e) => keys[e.key] = true);
+window.addEventListener('keyup', (e) => keys[e.key] = false);
+
+// Game loop
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+// Update game state
+function update() {
+    if(keys['ArrowUp']) player.y -= player.speed;
+    if(keys['ArrowDown']) player.y += player.speed;
+    if(keys['ArrowLeft']) player.x -= player.speed;
+    if(keys['ArrowRight']) player.x += player.speed;
+
+    // Interaction
+    if(keys[' ']) {
+        npcs.forEach(npc => {
+            if (Math.abs(player.x - npc.x) < 40 && Math.abs(player.y - npc.y) < 40) {
+                alert(npc.message);
+            }
+        });
+    }
+}
+
+// Draw everything
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw player
+    ctx.fillStyle = player.color;
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+
+    // Draw NPCs
+    npcs.forEach(npc => {
+        ctx.fillStyle = npc.color;
+        ctx.fillRect(npc.x, npc.y, npc.width, npc.height);
+    });
+}
+
+gameLoop();
+</script>
+</body>
+</html>

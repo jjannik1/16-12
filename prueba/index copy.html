@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Mini Gothic RPG Avanzado</title>
+<style>
+  body { margin: 0; background: #000; }
+  canvas { display: block; margin: 0 auto; background: #4a3f2f; }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas" width="800" height="600"></canvas>
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// --- Juego ---
+const TILE_SIZE = 32;
+const mapWidth = 25;
+const mapHeight = 19;
+
+// Mapa simple: 0 = piso, 1 = pared
+const map = [
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,1,1,1,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,1],
+  [1,0,0,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,1],
+  [1,0,0,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,1],
+  [1,0,0,0,1,1,1,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+];
+
+// --- Jugador ---
+const player = {
+    x: 2 * TILE_SIZE,
+    y: 2 * TILE_SIZE,
+    width: 28,
+    height: 28,
+    color: 'blue',
+    speed: 2,
+    hp: 100,
+    attack: 10
+};
+
+// --- Enemigos ---
+const enemies = [
+    { x: 10*TILE_SIZE, y: 5*TILE_SIZE, width: 28, height: 28, color: 'red', hp: 30, attack: 5 },
+    { x: 15*TILE_SIZE, y: 8*TILE_SIZE, width: 28, height: 28, color: 'red', hp: 30, attack: 5 }
+];
+
+// --- NPCs ---
+const npcs = [
+    { x: 5*TILE_SIZE, y: 10*TILE_SIZE, width: 28, height: 28, color: 'green', message: "Bienvenido al mundo!" }
+];
+
+// --- Inventario ---
+const inventory = [];
+
+// --- Input ---
+const keys = {};
+window.addEventListener('keydown', e => keys[e.key] = true);
+window.addEventListener('keyup', e => keys[e.key] = false);
+
+// --- Funciones ---
+function canMove(x, y) {
+    const tileX = Math.floor(x / TILE_SIZE);
+    const tileY = Math.floor(y / TILE_SIZE);
+    if (tileX < 0 || tileX >= mapWidth || tileY < 0 || tileY >= mapHeight) return false;
+    return map[tileY][tileX] === 0;
+}
+
+// Actualizar juego
+function update() {
+    let newX = player.x;
+    let newY = player.y;
+    if(keys['ArrowUp']) newY -= player.speed;
+    if(keys['ArrowDown']) newY += player.speed;
+    if(keys['ArrowLeft']) newX -= player.speed;
+    if(keys['ArrowRight']) newX += player.speed;
+
+    // Colisiones con paredes
+    if(canMove(newX, player.y)) player.x = newX;
+    if(canMove(player.x, newY)) player.y = newY;
+
+    // Interacción con NPCs
+    if(keys[' ']) {
+        npcs.forEach(npc => {
+            if(Math.abs(player.x - npc.x) < TILE_SIZE && Math.abs(player.y - npc.y) < TILE_SIZE) {
+                alert(npc.message);
+            }
+        });
+    }
+
+    // Enemigos siguen al jugador si está cerca
+    enemies.forEach(enemy => {
+        const dx = player.x - enemy.x;
+        const dy = player.y - enemy.y;
+        const distance = Math.hypot(dx, dy);
+        if(distance < 200 && distance > 0){
+            enemy.x += (dx/distance) * 1;
+            enemy.y += (dy/distance) * 1;
+        }
+
+        // Combate automático si chocan
+        if(distance < 30) {
+            player.hp -= enemy.attack * 0.1;
+        }
+    });
+
+    // Limitar hp
+    if(player.hp < 0) player.hp = 0;
+}
+
+// Dibujar juego
+function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    // Dibujar mapa
+    for(let y=0; y<mapHeight; y++){
+        for(let x=0; x<mapWidth; x++){
+            if(map[y][x] === 1){
+                ctx.fillStyle = '#333';
+                ctx.fillRect(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            } else {
+                ctx.fillStyle = '#7c6a4f';
+                ctx.fillRect(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            }
+        }
+    }
+
+    // Dibujar NPCs
+    npcs.forEach(npc => {
+        ctx.fillStyle = npc.color;
+        ctx.fillRect(npc.x, npc.y, npc.width, npc.height);
+    });
+
+    // Dibujar enemigos
+    enemies.forEach(enemy => {
+        ctx.fillStyle = enemy.color;
+        ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+    });
+
+    // Dibujar jugador
+    ctx.fillStyle = player.color;
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+
+    // Dibujar HUD
+    ctx.fillStyle = 'white';
+    ctx.fillText(`HP: ${Math.floor(player.hp)}`, 10, 20);
+    ctx.fillText(`Inventario: ${inventory.join(', ')}`, 10, 40);
+}
+
+// Loop del juego
+function gameLoop(){
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+</body>
+</html>
